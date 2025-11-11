@@ -32,10 +32,10 @@ add_executable(Safe_File_tests tests/test_SafeFileBuffer.cpp)
 target_link_libraries(Safe_File_tests PRIVATE Safe_File)
 add_test(NAME Safe_File_tests COMMAND $<TARGET_FILE:Safe_File_tests>)
 
-# --- Task 4: vector_profiler ---
-add_library(vector_profiler src/vector_profiler.cpp)
-target_include_directories(vector_profiler PUBLIC include)
+# --- Task 4: async_job_queue ---
+add_library(async_job_queue src/async_job_queue.cpp)
+target_include_directories(async_job_queue PUBLIC include)
 
-add_executable(vector_profiler_tests tests/test_vector_profiler.cpp)
-target_link_libraries(vector_profiler_tests PRIVATE vector_profiler)
-add_test(NAME vector_profiler_tests COMMAND $<TARGET_FILE:vector_profiler_tests>)
+add_executable(async_job_queue_tests tests/test_async_job_queue.cpp)
+target_link_libraries(async_job_queue_tests PRIVATE async_job_queue)
+add_test(NAME async_job_queue_tests COMMAND $<TARGET_FILE:async_job_queue_tests>)
