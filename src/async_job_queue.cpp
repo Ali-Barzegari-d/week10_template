@@ -3,48 +3,87 @@
 
 AsyncJobQueue::AsyncJobQueue()
 {
-    // TODO: start worker thread that runs worker_loop()
+    worker_ = std::thread(&AsyncJobQueue::worker_loop, this);
 }
 
 AsyncJobQueue::~AsyncJobQueue()
 {
-    // TODO: stop the worker safely (use stop() and join the thread)
+    stop();
+    if (worker_.joinable())
+        worker_.join();
 }
 
 AsyncJobQueue::AsyncJobQueue(AsyncJobQueue &&other) noexcept
 {
-    // TODO: move ownership of thread and queue safely from other
+    // Transfer state
+    {
+        std::lock_guard<std::mutex> lock(other.mtx_);
+        jobs_ = std::move(other.jobs_);
+        running_ = other.running_.load();
+    }
+
+    // Start a new worker bound to *this* (not other's pointer!)
+    if (running_)
+    {
+        worker_ = std::thread(&AsyncJobQueue::worker_loop, this);
+    }
+
+    // Stop the old one safely
+    other.stop();
+    if (other.worker_.joinable())
+        other.worker_.join();
 }
 
 AsyncJobQueue &AsyncJobQueue::operator=(AsyncJobQueue &&other) noexcept
 {
     if (this != &other)
     {
-        // TODO: stop current worker, then move resources from other
+        stop();
+        if (worker_.joinable())
+            worker_.join();
+
+        {
+            std::lock_guard<std::mutex> lock1(mtx_);
+            std::lock_guard<std::mutex> lock2(other.mtx_);
+            jobs_ = std::move(other.jobs_);
+            running_ = other.running_.load();
+        }
+
+        if (running_)
+        {
+            worker_ = std::thread(&AsyncJobQueue::worker_loop, this);
+        }
+
+        other.stop();
+        if (other.worker_.joinable())
+            other.worker_.join();
     }
     return *this;
 }
 
 void AsyncJobQueue::enqueue(std::function<void()> job)
 {
-    // TODO:
-    // 1. lock mutex
-    // 2. push job into queue
-    // 3. notify worker thread
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
+        jobs_.push(std::move(job));
+    }
+    cv_.notify_one();
 }
 
 void AsyncJobQueue::stop()
 {
-    // TODO:
-    // 1. set running_ = false
-    // 2. notify the worker thread
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
+        running_ = false;
+    }
+    cv_.notify_all();
 }
 
 void AsyncJobQueue::worker_loop()
 {
     try
     {
-        while (running_)
+        while (true)
         {
             std::function<void()> job;
             {
@@ -53,14 +92,12 @@ void AsyncJobQueue::worker_loop()
                          { return !jobs_.empty() || !running_; });
                 if (!running_ && jobs_.empty())
                     break;
-
                 job = std::move(jobs_.front());
                 jobs_.pop();
             }
 
             try
             {
-                // TODO: execute the job safely
                 job();
             }
             catch (const std::exception &e)
@@ -75,6 +112,6 @@ void AsyncJobQueue::worker_loop()
     }
     catch (...)
     {
-        std::cerr << "[AsyncJobQueue] Worker thread crashed unexpectedly.\n";
+        std::cerr << "[AsyncJobQueue] Worker crashed unexpectedly.\n";
     }
 }
