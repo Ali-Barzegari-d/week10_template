@@ -1,5 +1,6 @@
 #include "ThreadedAccumulator.hpp"
 #include <iostream>
+#include <algorithm>
 
 ThreadedAccumulator::ThreadedAccumulator(const std::vector<int> &data, size_t thread_count)
     : data(data), thread_count(thread_count), total_sum(0)

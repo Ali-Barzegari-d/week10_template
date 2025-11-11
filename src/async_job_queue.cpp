@@ -44,7 +44,7 @@ void AsyncJobQueue::worker_loop()
 {
     try
     {
-        while (running_)
+        while (true)
         {
             std::function<void()> job;
             {

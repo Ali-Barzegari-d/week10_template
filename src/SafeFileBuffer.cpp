@@ -1,4 +1,5 @@
 #include "SafeFileBuffer.hpp"
+#include <iostream>
 
 SafeFileBuffer::SafeFileBuffer(const std::string &path, std::ios::openmode mode)
     : path_(path), mode_(mode)
