@@ -75,6 +75,6 @@ void AsyncJobQueue::worker_loop()
     }
     catch (...)
     {
-        std::cerr << "[AsyncJobQueue] Worker thread crashed unexpectedly.\n";
+        std::cerr << "[AsyncJobQueue] Worker crashed unexpectedly.\n";
     }
 }
